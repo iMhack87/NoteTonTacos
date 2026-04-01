@@ -120,8 +120,9 @@ async function loadFeed() {
         </div>
         <div class="taco-tags">
           <span class="tag tag-size">\${r.size}</span>
-          \${r.ingredients ? r.ingredients.slice(0, 3).map(i => \`<span class="tag tag-meat">\${i}</span>\`).join('') : ''}
-          \${r.ingredients && r.ingredients.length > 3 ? '<span class="tag">+</span>' : ''}
+          \${r.meats && r.meats.length > 0 ? r.meats.slice(0, 2).map(m => \`<span class="tag tag-meat">\${m}</span>\`).join('') : ''}
+          \${r.sauces && r.sauces.length > 0 ? r.sauces.slice(0, 2).map(s => \`<span class="tag tag-sauce">\${s}</span>\`).join('') : ''}
+          \${(r.meats && r.meats.length > 2) || (r.sauces && r.sauces.length > 2) ? '<span class="tag">+</span>' : ''}
         </div>
         <p class="taco-desc">\${r.description ? r.description.substring(0, 80) + '...' : 'Pas de description'}</p>
         <div style="margin-top: auto; display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.85rem;">
@@ -139,6 +140,38 @@ async function loadFeed() {
 function setupCreateForm() {
   const form = document.getElementById('create-form');
   if(!form) return;
+
+  // Custom Meats Logic
+  const addMeatBtn = document.getElementById('btn-add-meat');
+  if(addMeatBtn) {
+    addMeatBtn.addEventListener('click', () => {
+      const input = document.getElementById('custom-meat-input');
+      const val = input.value.trim();
+      if(!val) return;
+      const id = 'cm-' + Date.now();
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = \`<input type="checkbox" name="meats" id="\${id}" value="\${val}" checked><label for="\${id}">\${val}</label>\`;
+      document.getElementById('meats-grid').appendChild(div);
+      input.value = '';
+    });
+  }
+
+  // Custom Sauces Logic
+  const addSauceBtn = document.getElementById('btn-add-sauce');
+  if(addSauceBtn) {
+    addSauceBtn.addEventListener('click', () => {
+      const input = document.getElementById('custom-sauce-input');
+      const val = input.value.trim();
+      if(!val) return;
+      const id = 'cs-' + Date.now();
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = \`<input type="checkbox" name="sauces" id="\${id}" value="\${val}" checked><label for="\${id}">\${val}</label>\`;
+      document.getElementById('sauces-grid').appendChild(div);
+      input.value = '';
+    });
+  }
   
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -149,7 +182,8 @@ function setupCreateForm() {
     const gratinnage = document.querySelector('input[name="gratinnage"]:checked')?.value || null;
     const description = document.getElementById('description').value;
     
-    const ingredients = Array.from(document.querySelectorAll('input[name="ingredients"]:checked')).map(i => i.value);
+    const meats = Array.from(document.querySelectorAll('input[name="meats"]:checked')).map(i => i.value);
+    const sauces = Array.from(document.querySelectorAll('input[name="sauces"]:checked')).map(i => i.value);
     
     const payload = {
       name,
@@ -157,7 +191,8 @@ function setupCreateForm() {
       size,
       gratinnage,
       description,
-      ingredients
+      meats,
+      sauces
     };
     
     try {
@@ -204,9 +239,13 @@ async function loadRecipe() {
       <div class="glass-panel">
         <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Composition</h3>
         <p><strong>Taille :</strong> <span class="tag tag-size">\${recipe.size}</span></p>
-        <p style="margin-top: 1rem;"><strong>Ingrédients :</strong></p>
+        <p style="margin-top: 1rem;"><strong>Viandes & Plats :</strong></p>
         <div class="taco-tags" style="margin-top: 0.5rem;">
-          \${recipe.ingredients ? recipe.ingredients.map(i => \`<span class="tag tag-meat">\${i}</span>\`).join('') : '<span class="text-muted">Aucun</span>'}
+          \${recipe.meats && recipe.meats.length > 0 ? recipe.meats.map(m => \`<span class="tag tag-meat">\${m}</span>\`).join('') : '<span class="text-muted">Aucune</span>'}
+        </div>
+        <p style="margin-top: 1rem;"><strong>Sauces :</strong></p>
+        <div class="taco-tags" style="margin-top: 0.5rem;">
+          \${recipe.sauces && recipe.sauces.length > 0 ? recipe.sauces.map(s => \`<span class="tag tag-sauce">\${s}</span>\`).join('') : '<span class="text-muted">Aucune</span>'}
         </div>
         <p style="margin-top: 1rem;"><strong>Gratinnage :</strong> \${recipe.gratinnage || 'Aucun'}</p>
       </div>
@@ -248,52 +287,57 @@ async function loadComments(id) {
 
 function setupInteractions(id) {
   // Rating form
-  document.getElementById('rating-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if(!currentUser) {
-      document.getElementById('login-modal').classList.add('active');
-      return;
-    }
-    const score = document.querySelector('input[name="rating"]:checked')?.value;
-    if(!score) return;
-    
-    try {
-      await fetch(\`\${API_URL}/recipes/\${id}/rating\`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.id, score: parseInt(score) })
-      });
-      showToast('Note enregistrée !', 'success');
-      setTimeout(() => location.reload(), 1000);
-    } catch(e) {}
-  });
+  const ratingForm = document.getElementById('rating-form');
+  if(ratingForm) {
+    ratingForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if(!currentUser) {
+        document.getElementById('login-modal').classList.add('active');
+        return;
+      }
+      const score = document.querySelector('input[name="rating"]:checked')?.value;
+      if(!score) return;
+      
+      try {
+        await fetch(\`\${API_URL}/recipes/\${id}/rating\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: currentUser.id, score: parseInt(score) })
+        });
+        showToast('Note enregistrée !', 'success');
+        setTimeout(() => location.reload(), 1000);
+      } catch(e) {}
+    });
+  }
 
   // Comment form
-  document.getElementById('comment-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if(!currentUser) {
-      document.getElementById('login-modal').classList.add('active');
-      return;
-    }
-    const content = document.getElementById('comment-content').value;
-    if(!content) return;
-    
-    try {
-      await fetch(\`\${API_URL}/recipes/\${id}/comments\`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.id, content })
-      });
-      document.getElementById('comment-content').value = '';
-      loadComments(id);
-      showToast('Commentaire ajouté', 'success');
-    } catch(e) {}
-  });
+  const commentForm = document.getElementById('comment-form');
+  if(commentForm) {
+    commentForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if(!currentUser) {
+        document.getElementById('login-modal').classList.add('active');
+        return;
+      }
+      const content = document.getElementById('comment-content').value;
+      if(!content) return;
+      
+      try {
+        await fetch(\`\${API_URL}/recipes/\${id}/comments\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: currentUser.id, content })
+        });
+        document.getElementById('comment-content').value = '';
+        loadComments(id);
+        showToast('Commentaire ajouté', 'success');
+      } catch(e) {}
+    });
+  }
 }
 
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
-  // Append Toast Container
   const tc = document.createElement('div');
   tc.id = 'toast-container';
   document.body.appendChild(tc);

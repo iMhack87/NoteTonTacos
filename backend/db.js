@@ -6,10 +6,8 @@ const dbPromise = open({
   filename: path.join(__dirname, 'tacos.sqlite'),
   driver: sqlite3.Database
 }).then(async (db) => {
-  // Enable foreign keys
   await db.exec('PRAGMA foreign_keys = ON');
 
-  // Create tables
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,6 +28,7 @@ const dbPromise = open({
     CREATE TABLE IF NOT EXISTS recipe_ingredients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+      type VARCHAR(20) NOT NULL, -- 'meat' or 'sauce'
       ingredient_name VARCHAR(100) NOT NULL
     );
 
@@ -51,7 +50,6 @@ const dbPromise = open({
     );
   `);
 
-  // Simple seed
   await db.run('INSERT OR IGNORE INTO users (username) VALUES (?)', ['ChefTacos']);
   await db.run('INSERT OR IGNORE INTO users (username) VALUES (?)', ['Gourmand87']);
 

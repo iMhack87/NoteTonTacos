@@ -7,19 +7,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve Static Frontend files
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// ==========================================
-// API ENDPOINTS
-// ==========================================
-
-function parseIngredients(str) {
+function parseCSV(str) {
   if (!str) return [];
   return str.split(',');
 }
 
-// USERS
 app.post('/api/users', async (req, res) => {
   const { username } = req.body;
   if (!username) return res.status(400).json({ error: 'Username required' });
@@ -37,7 +31,6 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-// RECIPES
 app.get('/api/recipes', async (req, res) => {
   try {
     const db = await dbPromise;
@@ -46,13 +39,17 @@ app.get('/api/recipes', async (req, res) => {
       (SELECT COALESCE(AVG(score), 0) FROM ratings WHERE recipe_id = r.id) as avg_rating,
       (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) as rating_count,
       (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) as comment_count,
-      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id) as ingredients
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='meat') as meats,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces
       FROM recipes r
       JOIN users u ON r.author_id = u.id
       ORDER BY r.created_at DESC;
     `;
     const rows = await db.all(query);
-    rows.forEach(r => r.ingredients = parseIngredients(r.ingredients));
+    rows.forEach(r => {
+      r.meats = parseCSV(r.meats);
+      r.sauces = parseCSV(r.sauces);
+    });
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -68,7 +65,8 @@ app.get('/api/recipes/:id', async (req, res) => {
       SELECT r.*, u.username as author_name,
       (SELECT COALESCE(AVG(score), 0) FROM ratings WHERE recipe_id = r.id) as avg_rating,
       (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) as rating_count,
-      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id) as ingredients
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='meat') as meats,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces
       FROM recipes r
       JOIN users u ON r.author_id = u.id
       WHERE r.id = ?;
@@ -76,7 +74,8 @@ app.get('/api/recipes/:id', async (req, res) => {
     const row = await db.get(query, [id]);
     if (!row) return res.status(404).json({ error: 'Not found' });
     
-    row.ingredients = parseIngredients(row.ingredients);
+    row.meats = parseCSV(row.meats);
+    row.sauces = parseCSV(row.sauces);
     res.json(row);
   } catch (err) {
     console.error(err);
@@ -85,7 +84,7 @@ app.get('/api/recipes/:id', async (req, res) => {
 });
 
 app.post('/api/recipes', async (req, res) => {
-  const { name, author_id, size, gratinnage, description, ingredients } = req.body;
+  const { name, author_id, size, gratinnage, description, meats, sauces } = req.body;
   if (!name || !author_id || !size) return res.status(400).json({ error: 'Missing required fields' });
   
   try {
@@ -99,9 +98,14 @@ app.post('/api/recipes', async (req, res) => {
     const result = await db.run(recipeQuery, [name, author_id, size, gratinnage, description]);
     const recipeId = result.lastID;
     
-    if (ingredients && ingredients.length > 0) {
-      for (const ing of ingredients) {
-        await db.run('INSERT INTO recipe_ingredients (recipe_id, ingredient_name) VALUES (?, ?)', [recipeId, ing]);
+    if (meats && meats.length > 0) {
+      for (const m of meats) {
+        await db.run('INSERT INTO recipe_ingredients (recipe_id, type, ingredient_name) VALUES (?, ?, ?)', [recipeId, 'meat', m]);
+      }
+    }
+    if (sauces && sauces.length > 0) {
+      for (const s of sauces) {
+        await db.run('INSERT INTO recipe_ingredients (recipe_id, type, ingredient_name) VALUES (?, ?, ?)', [recipeId, 'sauce', s]);
       }
     }
     

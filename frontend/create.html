@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Créer un Tacos - Note Ton Tacos</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .custom-add { display: flex; gap: 0.5rem; margin-top: 1rem; }
+  </style>
 </head>
 <body>
   
@@ -51,40 +54,34 @@
           </div>
 
           <div class="form-group" style="margin-top: 2rem;">
-            <label class="form-label">Ingrédients & Viandes</label>
-            <div class="checkbox-grid">
-              <div class="checkbox-item">
-                <input type="checkbox" name="ingredients" id="i-poulet" value="Poulet Mariné">
-                <label for="i-poulet">Poulet Mariné</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" name="ingredients" id="i-hache" value="Viande Hachée">
-                <label for="i-hache">Viande Hachée</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" name="ingredients" id="i-cordon" value="Cordon Bleu">
-                <label for="i-cordon">Cordon Bleu</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" name="ingredients" id="i-tenders" value="Tenders">
-                <label for="i-tenders">Tenders</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" name="ingredients" id="i-merguez" value="Merguez">
-                <label for="i-merguez">Merguez</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" name="ingredients" id="i-falafel" value="Falafel">
-                <label for="i-falafel">Falafel</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" name="ingredients" id="i-alg" value="Sauce Algérienne">
-                <label for="i-alg">Sauce Algérienne</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" name="ingredients" id="i-sam" value="Sauce Samouraï">
-                <label for="i-sam">Sauce Samouraï</label>
-              </div>
+            <label class="form-label">Viandes & Plats</label>
+            <div class="checkbox-grid" id="meats-grid">
+              <div class="checkbox-item"><input type="checkbox" name="meats" id="m-poulet" value="Poulet Mariné"><label for="m-poulet">Poulet Mariné</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="meats" id="m-hache" value="Viande Hachée"><label for="m-hache">Viande Hachée</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="meats" id="m-cordon" value="Cordon Bleu"><label for="m-cordon">Cordon Bleu</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="meats" id="m-tenders" value="Tenders"><label for="m-tenders">Tenders</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="meats" id="m-merguez" value="Merguez"><label for="m-merguez">Merguez</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="meats" id="m-falafel" value="Falafel"><label for="m-falafel">Falafel</label></div>
+            </div>
+            <div class="custom-add">
+              <input type="text" id="custom-meat-input" class="form-control" placeholder="Ajouter une autre viande/plat...">
+              <button type="button" class="btn btn-secondary" id="btn-add-meat" style="min-width: 100px;">Ajouter</button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 2rem;">
+            <label class="form-label">Sauces</label>
+            <div class="checkbox-grid" id="sauces-grid">
+              <div class="checkbox-item"><input type="checkbox" name="sauces" id="s-alg" value="Algérienne"><label for="s-alg">Algérienne</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="sauces" id="s-sam" value="Samouraï"><label for="s-sam">Samouraï</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="sauces" id="s-big" value="Biggy"><label for="s-big">Biggy</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="sauces" id="s-blanche" value="Blanche"><label for="s-blanche">Blanche</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="sauces" id="s-mayo" value="Mayonnaise"><label for="s-mayo">Mayonnaise</label></div>
+              <div class="checkbox-item"><input type="checkbox" name="sauces" id="s-ketchup" value="Ketchup"><label for="s-ketchup">Ketchup</label></div>
+            </div>
+            <div class="custom-add">
+              <input type="text" id="custom-sauce-input" class="form-control" placeholder="Ajouter une autre sauce...">
+              <button type="button" class="btn btn-secondary" id="btn-add-sauce" style="min-width: 100px;">Ajouter</button>
             </div>
           </div>
 
@@ -124,7 +121,6 @@
     </div>
   </main>
 
-  <!-- Login Modal -->
   <div class="overlay" id="login-modal">
     <div class="modal">
       <h2 style="margin-bottom: 1rem;">Connexion Requise</h2>
