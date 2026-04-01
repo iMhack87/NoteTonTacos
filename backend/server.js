@@ -2,6 +2,28 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dbPromise = require('./db');
+const leoProfanity = require('leo-profanity');
+const sanitizeHtml = require('sanitize-html');
+
+// Load bilingual profanity dictionaries
+leoProfanity.loadDictionary('en');
+const enDict = leoProfanity.list();
+leoProfanity.loadDictionary('fr');
+const frDict = leoProfanity.list();
+leoProfanity.clearList();
+leoProfanity.add(enDict);
+leoProfanity.add(frDict);
+
+function cleanText(text, maxLength = 500) {
+  if (!text || typeof text !== 'string') return '';
+  // Truncate to avoid huge texts
+  let cleaned = text.substring(0, maxLength);
+  // Strip out ALL HTML
+  cleaned = sanitizeHtml(cleaned, { allowedTags: [], allowedAttributes: {} });
+  // Censor bad words
+  cleaned = leoProfanity.clean(cleaned);
+  return cleaned.trim();
+}
 
 const app = express();
 app.use(cors());
@@ -15,8 +37,8 @@ function parseCSV(str) {
 }
 
 app.post('/api/users', async (req, res) => {
-  const { username } = req.body;
-  if (!username) return res.status(400).json({ error: 'Username required' });
+  const username = cleanText(req.body.username, 40);
+  if (!username) return res.status(400).json({ error: 'Username required or invalid' });
   try {
     const db = await dbPromise;
     let user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
@@ -84,8 +106,17 @@ app.get('/api/recipes/:id', async (req, res) => {
 });
 
 app.post('/api/recipes', async (req, res) => {
-  const { name, author_id, size, gratinnage, description, meats, sauces } = req.body;
-  if (!name || !author_id || !size) return res.status(400).json({ error: 'Missing required fields' });
+  let { name, author_id, size, gratinnage, description, meats, sauces } = req.body;
+  
+  name = cleanText(name, 60);
+  size = cleanText(size, 30);
+  gratinnage = cleanText(gratinnage, 50);
+  description = cleanText(description, 1500);
+  
+  if (!name || !author_id || !size) return res.status(400).json({ error: 'Missing required fields or invalid text' });
+  
+  const safeMeats = Array.isArray(meats) ? meats.map(m => cleanText(m, 40)).filter(m => m) : [];
+  const safeSauces = Array.isArray(sauces) ? sauces.map(s => cleanText(s, 40)).filter(s => s) : [];
   
   try {
     const db = await dbPromise;
@@ -98,13 +129,13 @@ app.post('/api/recipes', async (req, res) => {
     const result = await db.run(recipeQuery, [name, author_id, size, gratinnage, description]);
     const recipeId = result.lastID;
     
-    if (meats && meats.length > 0) {
-      for (const m of meats) {
+    if (safeMeats && safeMeats.length > 0) {
+      for (const m of safeMeats) {
         await db.run('INSERT INTO recipe_ingredients (recipe_id, type, ingredient_name) VALUES (?, ?, ?)', [recipeId, 'meat', m]);
       }
     }
-    if (sauces && sauces.length > 0) {
-      for (const s of sauces) {
+    if (safeSauces && safeSauces.length > 0) {
+      for (const s of safeSauces) {
         await db.run('INSERT INTO recipe_ingredients (recipe_id, type, ingredient_name) VALUES (?, ?, ?)', [recipeId, 'sauce', s]);
       }
     }
@@ -163,7 +194,8 @@ app.get('/api/recipes/:id/comments', async (req, res) => {
 
 app.post('/api/recipes/:id/comments', async (req, res) => {
   const { id } = req.params;
-  const { user_id, content } = req.body;
+  const user_id = req.body.user_id;
+  const content = cleanText(req.body.content, 1000);
   if (!user_id || !content) return res.status(400).json({ error: 'Invalid data' });
   
   try {

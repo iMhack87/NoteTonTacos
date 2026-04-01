@@ -364,8 +364,8 @@ header {
 
 .stars {
   display: flex;
-  direction: row-reverse;
-  justify-content: center;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
