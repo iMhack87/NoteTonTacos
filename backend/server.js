@@ -14,6 +14,13 @@ leoProfanity.clearList();
 leoProfanity.add(enDict);
 leoProfanity.add(frDict);
 
+// Add extra custom "troll" or anatomical words missing from standard dictionary
+const customBadWords = [
+  'sperme', 'spermes', 'foutre', 'zizi', 'bite', 'chatte', 'couille', 'couilles',
+  'pisse', 'vomi', 'caca', 'chiasse', 'smen', 'smegma'
+];
+leoProfanity.add(customBadWords);
+
 function cleanText(text, maxLength = 500) {
   if (!text || typeof text !== 'string') return '';
   // Truncate to avoid huge texts
