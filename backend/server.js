@@ -4,6 +4,7 @@ const path = require('path');
 const dbPromise = require('./db');
 const leoProfanity = require('leo-profanity');
 const sanitizeHtml = require('sanitize-html');
+const bcrypt = require('bcryptjs');
 
 // Load bilingual profanity dictionaries
 leoProfanity.loadDictionary('en');
@@ -43,17 +44,100 @@ function parseCSV(str) {
   return str.split(',');
 }
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users/register', async (req, res) => {
   const username = cleanText(req.body.username, 40);
-  if (!username) return res.status(400).json({ error: 'Username required or invalid' });
+  const password = req.body.password;
+  
+  if (!username) return res.status(400).json({ error: 'Pseudo requis' });
+  if (!password || password.length < 4) return res.status(400).json({ error: 'Mot de passe requis (min 4 caractères)' });
+
   try {
     const db = await dbPromise;
     let user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
-    if (!user) {
-      const result = await db.run('INSERT INTO users (username) VALUES (?)', [username]);
-      user = await db.get('SELECT * FROM users WHERE id = ?', [result.lastID]);
+    if (user) {
+      return res.status(400).json({ error: 'Ce pseudo est déjà pris' });
     }
+    
+    const hash = await bcrypt.hash(password, 10);
+    const result = await db.run('INSERT INTO users (username, password_hash) VALUES (?, ?)', [username, hash]);
+    user = await db.get('SELECT id, username, created_at FROM users WHERE id = ?', [result.lastID]);
+    
     res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/users/login', async (req, res) => {
+  const username = cleanText(req.body.username, 40);
+  const password = req.body.password;
+  
+  if (!username || !password) return res.status(400).json({ error: 'Pseudo et mot de passe requis' });
+
+  try {
+    const db = await dbPromise;
+    const user = await db.get('SELECT * FROM users WHERE username = ?', [username]);
+    
+    if (!user || !user.password_hash) {
+      return res.status(400).json({ error: 'Pseudo ou mot de passe incorrect' });
+    }
+    
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Pseudo ou mot de passe incorrect' });
+    }
+    
+    res.json({
+      id: user.id,
+      username: user.username,
+      created_at: user.created_at
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/users/:id/profile', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const db = await dbPromise;
+    const user = await db.get('SELECT id, username, created_at FROM users WHERE id = ?', [id]);
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+    
+    const stats = await db.get(`
+      SELECT 
+        (SELECT COUNT(*) FROM recipes WHERE author_id = ?) as recipe_count,
+        (SELECT COUNT(*) FROM ratings WHERE user_id = ?) as rating_count,
+        (SELECT ROUND(COALESCE(AVG(r.score), 0), 1) FROM ratings r JOIN recipes rec ON r.recipe_id = rec.id WHERE rec.author_id = ?) as avg_received
+    `, [id, id, id]);
+
+    const query = `
+      SELECT r.*, u.username as author_name,
+      (SELECT COALESCE(AVG(score), 0) FROM ratings WHERE recipe_id = r.id) as avg_rating,
+      (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) as rating_count,
+      (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) as comment_count,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='meat') as meats,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='supplement') as supplements
+      FROM recipes r
+      JOIN users u ON r.author_id = u.id
+      WHERE r.author_id = ?
+      ORDER BY r.created_at DESC;
+    `;
+    const rows = await db.all(query, [id]);
+    rows.forEach(r => {
+      r.meats = parseCSV(r.meats);
+      r.sauces = parseCSV(r.sauces);
+      r.supplements = parseCSV(r.supplements);
+    });
+
+    res.json({
+      user,
+      stats,
+      recipes: rows
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -90,6 +174,7 @@ app.get('/api/recipes', async (req, res) => {
 
 app.get('/api/recipes/:id', async (req, res) => {
   const { id } = req.params;
+  const { userId } = req.query;
   try {
     const db = await dbPromise;
     const query = `
@@ -99,17 +184,93 @@ app.get('/api/recipes/:id', async (req, res) => {
       (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='meat') as meats,
       (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces,
       (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='supplement') as supplements
+      ${userId ? `, (SELECT type FROM bookmarks WHERE recipe_id = r.id AND user_id = ?) as user_bookmark` : ''}
       FROM recipes r
       JOIN users u ON r.author_id = u.id
       WHERE r.id = ?;
     `;
-    const row = await db.get(query, [id]);
+    const params = userId ? [userId, id] : [id];
+    const row = await db.get(query, params);
     if (!row) return res.status(404).json({ error: 'Not found' });
     
     row.meats = parseCSV(row.meats);
     row.sauces = parseCSV(row.sauces);
     row.supplements = parseCSV(row.supplements);
     res.json(row);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Bookmark routes
+app.post('/api/recipes/:id/bookmark', async (req, res) => {
+  const recipe_id = req.params.id;
+  const { user_id, type } = req.body; // type = 'favorite' or 'todo'
+  
+  if (!user_id || !type) return res.status(400).json({ error: 'Missing user_id or type' });
+  
+  try {
+    const db = await dbPromise;
+    // Check if bookmark exists
+    const existing = await db.get('SELECT type FROM bookmarks WHERE user_id = ? AND recipe_id = ?', [user_id, recipe_id]);
+    
+    if (existing) {
+      if (existing.type === type) {
+        // Remove if it's the exact same type (toggle off)
+        await db.run('DELETE FROM bookmarks WHERE user_id = ? AND recipe_id = ?', [user_id, recipe_id]);
+        return res.json({ status: 'removed' });
+      } else {
+        // Switch type
+        await db.run('UPDATE bookmarks SET type = ? WHERE user_id = ? AND recipe_id = ?', [type, user_id, recipe_id]);
+        return res.json({ status: 'updated' });
+      }
+    } else {
+      // Add new
+      await db.run('INSERT INTO bookmarks (user_id, recipe_id, type) VALUES (?, ?, ?)', [user_id, recipe_id, type]);
+      return res.json({ status: 'added' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/users/:id/bookmarks', async (req, res) => {
+  const { id } = req.params;
+  const { type } = req.query; // optional filter
+  
+  try {
+    const db = await dbPromise;
+    let typeFilter = '';
+    const params = [id];
+    if (type) {
+      typeFilter = 'AND b.type = ?';
+      params.push(type);
+    }
+    
+    const query = `
+      SELECT r.*, u.username as author_name,
+      (SELECT COALESCE(AVG(score), 0) FROM ratings WHERE recipe_id = r.id) as avg_rating,
+      (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) as rating_count,
+      (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) as comment_count,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='meat') as meats,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='supplement') as supplements
+      FROM bookmarks b
+      JOIN recipes r ON b.recipe_id = r.id
+      JOIN users u ON r.author_id = u.id
+      WHERE b.user_id = ? ${typeFilter}
+      ORDER BY b.created_at DESC;
+    `;
+    const rows = await db.all(query, params);
+    rows.forEach(r => {
+      r.meats = parseCSV(r.meats);
+      r.sauces = parseCSV(r.sauces);
+      r.supplements = parseCSV(r.supplements);
+    });
+
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

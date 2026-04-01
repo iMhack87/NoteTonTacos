@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feed - Note Ton Tacos</title>
+  <title>Profil - Note Ton Tacos</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/x-icon" href="data:image/x-icon;,">
 </head>
 <body>
   
@@ -24,13 +23,34 @@
   </header>
 
   <main class="main-content container">
-    <div style="text-align: center; margin-bottom: 3rem;">
-      <h1 style="font-size: 3rem; margin-bottom: 1rem;">
-        Les Meilleurs <span class="text-gradient">French Tacos</span> du Monde
+    <div id="profile-header" style="text-align: center; margin-bottom: 3rem;">
+      <h1 style="font-size: 3rem; margin-bottom: 1rem;" id="profile-username">
+        Chargement...
       </h1>
-      <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
-        Découvrez les créations de la communauté, notez-les et partagez votre propre recette secrète.
+      <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto; margin-bottom: 2rem;">
+        Membre depuis le <span id="profile-date">...</span>
       </p>
+
+      <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; max-width: 800px; margin: 0 auto;">
+        <div class="glass-panel" style="text-align: center;">
+          <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary-color);" id="stat-recipes">0</div>
+          <div style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; margin-top: 0.5rem;">Recettes Créées</div>
+        </div>
+        <div class="glass-panel" style="text-align: center;">
+          <div style="font-size: 2.5rem; font-weight: 800; color: var(--secondary-color);" id="stat-ratings">0</div>
+          <div style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; margin-top: 0.5rem;">Notes Données</div>
+        </div>
+        <div class="glass-panel" style="text-align: center;">
+          <div style="font-size: 2.5rem; font-weight: 800; color: #ffc107;" id="stat-avg">0.0 <span style="font-size: 1.5rem;">★</span></div>
+          <div style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; margin-top: 0.5rem;">Moyenne Reçue</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;" id="profile-tabs">
+      <button class="btn btn-primary" id="tab-created">Mes Créations</button>
+      <button class="btn btn-secondary" id="tab-favorite">Favoris ❤️</button>
+      <button class="btn btn-secondary" id="tab-todo">À Tester 📌</button>
     </div>
 
     <!-- Feed Container -->
@@ -72,6 +92,6 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=2"></script>
+  <script src="js/app.js?v=3"></script>
 </body>
 </html>

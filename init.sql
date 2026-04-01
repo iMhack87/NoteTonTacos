@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -37,5 +38,13 @@ CREATE TABLE IF NOT EXISTS comments (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS bookmarks (
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, recipe_id, type)
+);
+
 -- Insérer quelques données de base
-INSERT INTO users (username) VALUES ('ChefTacos'), ('Gourmand87') ON CONFLICT DO NOTHING;
+INSERT INTO users (username, password_hash) VALUES ('ChefTacos', '$2a$10$wIX.bT9HhGz7N/rNxtt06.J4O7v7.2zW8L..BZbJq4XjJ.Yt/O26m'), ('Gourmand87', '$2a$10$wIX.bT9HhGz7N/rNxtt06.J4O7v7.2zW8L..BZbJq4XjJ.Yt/O26m') ON CONFLICT DO NOTHING;

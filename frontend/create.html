@@ -136,15 +136,34 @@
     </div>
   </main>
 
+  <!-- Login Modal -->
   <div class="overlay" id="login-modal">
-    <div class="modal">
-      <h2 style="margin-bottom: 1rem;">Connexion Requise</h2>
-      <p style="margin-bottom: 2rem; color: var(--text-secondary);">Veuillez choisir un pseudo pour publier votre recette.</p>
+    <div class="modal" style="position: relative;">
+      <button id="close-modal" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+      <div id="auth-tabs" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <button id="tab-login" class="btn btn-primary" style="flex:1;">Connexion</button>
+        <button id="tab-register" class="btn btn-secondary" style="flex:1;">Inscription</button>
+      </div>
+
+      <h2 id="auth-title" style="margin-bottom: 1rem; color: var(--primary-color);">Bienvenue Gourmet !</h2>
+      <p id="auth-desc" style="margin-bottom: 1.5rem; color: var(--text-secondary);">
+        Entrez vos identifiants pour continuer.
+      </p>
+
+      <div id="register-warning" style="display: none; background: rgba(255, 60, 60, 0.1); border-left: 4px solid var(--accent-color); padding: 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: #ffcccc; line-height: 1.4;">
+        <strong>Attention :</strong> 🌮 Il n'y a pas de système de récupération de mot de passe par email. Si vous perdez votre mot de passe, il faudra créer un nouveau compte !
+      </div>
+
       <form id="login-form">
         <div class="form-group">
-          <input type="text" id="pseudo" class="form-control" placeholder="Ex: MaitreTacos" required>
+          <label class="form-label" for="pseudo">Votre Pseudo</label>
+          <input type="text" id="pseudo" class="form-control" placeholder="Ex: MaitreTacos99" required autofocus>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Se connecter</button>
+        <div class="form-group">
+          <label class="form-label" for="password">Mot de passe</label>
+          <input type="password" id="password" class="form-control" placeholder="****" required>
+        </div>
+        <button type="submit" id="auth-submit" class="btn btn-primary" style="width: 100%;">Se connecter</button>
       </form>
     </div>
   </div>

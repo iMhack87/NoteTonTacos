@@ -36,26 +36,79 @@ async function initUser() {
 // Ensure Login DOM loaded
 function setupLogin() {
   const form = document.getElementById('login-form');
+  const tabLogin = document.getElementById('tab-login');
+  const tabRegister = document.getElementById('tab-register');
+  const authTitle = document.getElementById('auth-title');
+  const authDesc = document.getElementById('auth-desc');
+  const authSubmit = document.getElementById('auth-submit');
+  const warning = document.getElementById('register-warning');
+  
+  const closeBtn = document.getElementById('close-modal');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      const modal = document.getElementById('login-modal');
+      if (modal) modal.classList.remove('active');
+    });
+  }
+  
+  let isLoginMode = true;
+
+  if (tabLogin && tabRegister) {
+    function setMode(login) {
+      isLoginMode = login;
+      if (login) {
+        tabLogin.className = 'btn btn-primary';
+        tabRegister.className = 'btn btn-secondary';
+        authTitle.innerText = 'Bon retour Gourmet !';
+        authDesc.innerText = 'Entrez vos identifiants pour vous connecter.';
+        authSubmit.innerText = 'Se connecter';
+        warning.style.display = 'none';
+      } else {
+        tabLogin.className = 'btn btn-secondary';
+        tabRegister.className = 'btn btn-primary';
+        authTitle.innerText = 'Rejoignez-nous !';
+        authDesc.innerText = 'Créez votre compte pour noter et partager.';
+        authSubmit.innerText = 'Créer mon compte';
+        warning.style.display = 'block';
+      }
+    }
+
+    tabLogin.addEventListener('click', () => setMode(true));
+    tabRegister.addEventListener('click', () => setMode(false));
+  }
+
   if(form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const pseudo = document.getElementById('pseudo').value.trim();
-      if(!pseudo) return;
+      const password = document.getElementById('password')?.value || '';
+      
+      if(!pseudo || !password) {
+        showToast('Pseudo et mot de passe requis', 'error');
+        return;
+      }
+      
+      const endpoint = isLoginMode ? '/users/login' : '/users/register';
       
       try {
-        const res = await fetch(`${API_URL}/users`, {
+        const res = await fetch(`${API_URL}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: pseudo })
+          body: JSON.stringify({ username: pseudo, password })
         });
         const data = await res.json();
+        
+        if (!res.ok) {
+          showToast(data.error || 'Erreur', 'error');
+          return;
+        }
         
         localStorage.setItem('userId', data.id);
         localStorage.setItem('username', data.username);
         currentUser = data;
         
         document.getElementById('login-modal').classList.remove('active');
-        showToast(`Bienvenue ${pseudo} !`, 'success');
+        showToast(isLoginMode ? `Re-bonjour ${data.username} !` : `Compte créé pour ${data.username} !`, 'success');
         updateUserUI();
       } catch (e) {
         showToast('Erreur de connexion', 'error');
@@ -69,7 +122,9 @@ function updateUserUI() {
   if(ui && currentUser) {
     ui.innerHTML = `
       <div class="user-info">
-        <span class="username-display">${currentUser.username}</span>
+        <a href="profile.html?id=${currentUser.id}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-right: 0.5rem;">
+          <span style="font-weight: 800; color: var(--secondary-color); margin-right: 0.3rem;">@</span>${currentUser.username}
+        </a>
         <button id="logout-btn" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Déconnexion</button>
       </div>
     `;
@@ -114,7 +169,7 @@ async function loadFeed() {
         <div class="taco-card-header">
           <div>
             <h3 class="taco-title">${r.name}</h3>
-            <span class="taco-author">par ${r.author_name}</span>
+            <span class="taco-author">par <a href="profile.html?id=${r.author_id}" style="color: inherit; text-decoration: underline;" onclick="event.stopPropagation()">${r.author_name}</a></span>
           </div>
           <div class="taco-rating">${renderStars(r.avg_rating)} (${r.rating_count})</div>
         </div>
@@ -277,17 +332,29 @@ async function loadRecipe() {
   if(!id) return window.location.href = 'index.html';
 
   try {
-    const res = await fetch(`${API_URL}/recipes/${id}`);
+    const url = currentUser ? `${API_URL}/recipes/${id}?userId=${currentUser.id}` : `${API_URL}/recipes/${id}`;
+    const res = await fetch(url);
     if(!res.ok) throw new Error('Not found');
     const recipe = await res.json();
     
     document.title = `${recipe.name} - Note Ton Tacos`;
     document.getElementById('recipe-hero').innerHTML = `
       <h1 class="text-gradient" style="font-size: 3rem; margin-bottom: 0.5rem;">${recipe.name}</h1>
-      <p style="font-size: 1.2rem; color: var(--text-secondary);">Créé par ${recipe.author_name} le ${new Date(recipe.created_at).toLocaleDateString()}</p>
+      <p style="font-size: 1.2rem; color: var(--text-secondary);">Créé par <a href="profile.html?id=${recipe.author_id}" style="color: inherit; text-decoration: underline;">${recipe.author_name}</a> le ${new Date(recipe.created_at).toLocaleDateString()}</p>
       <div style="font-size: 2rem; margin-top: 1rem; color: #ffc107;">${renderStars(recipe.avg_rating)}</div>
       <p style="color: var(--text-muted);">${recipe.rating_count} note(s)</p>
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center;">
+        <button id="btn-fav" class="btn ${recipe.user_bookmark === 'favorite' ? 'btn-primary' : 'btn-secondary'}">
+          ${recipe.user_bookmark === 'favorite' ? '❤️ Favori' : '🤍 Ajouter aux favoris'}
+        </button>
+        <button id="btn-todo" class="btn ${recipe.user_bookmark === 'todo' ? 'btn-primary' : 'btn-secondary'}">
+          ${recipe.user_bookmark === 'todo' ? '📌 À tester (enregistré)' : '📍 À tester'}
+        </button>
+      </div>
     `;
+
+    document.getElementById('btn-fav').addEventListener('click', () => toggleBookmark(id, 'favorite'));
+    document.getElementById('btn-todo').addEventListener('click', () => toggleBookmark(id, 'todo'));
     
     document.getElementById('recipe-details').innerHTML = `
       <div class="glass-panel">
@@ -394,6 +461,102 @@ function setupInteractions(id) {
   }
 }
 
+async function toggleBookmark(recipeId, type) {
+  if (!currentUser) return showToast('Vous devez être connecté !', 'error');
+  try {
+    const res = await fetch(`${API_URL}/recipes/${recipeId}/bookmark`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: currentUser.id, type })
+    });
+    if(res.ok) {
+      loadRecipe(); // recharger pour mettre l'UI à jour
+    } else {
+      showToast('Erreur lors de l\'enregistrement', 'error');
+    }
+  } catch(e) {
+    showToast('Erreur serveur', 'error');
+  }
+}
+
+// Profile (profile.html)
+async function loadProfile(tab = 'created') {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if(!id) return;
+
+  const usernameHeader = document.getElementById('profile-username');
+  if (!usernameHeader) return;
+
+  document.getElementById('tab-created')?.classList.remove('btn-primary');
+  document.getElementById('tab-created')?.classList.add('btn-secondary');
+  document.getElementById('tab-favorite')?.classList.remove('btn-primary');
+  document.getElementById('tab-favorite')?.classList.add('btn-secondary');
+  document.getElementById('tab-todo')?.classList.remove('btn-primary');
+  document.getElementById('tab-todo')?.classList.add('btn-secondary');
+  document.getElementById(`tab-${tab}`)?.classList.remove('btn-secondary');
+  document.getElementById(`tab-${tab}`)?.classList.add('btn-primary');
+
+  try {
+    let url = `${API_URL}/users/${id}/profile`;
+    if (tab === 'favorite') url = `${API_URL}/users/${id}/bookmarks?type=favorite`;
+    if (tab === 'todo') url = `${API_URL}/users/${id}/bookmarks?type=todo`;
+
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('Not found');
+    const data = await res.json();
+    
+    let recipesList = [];
+    if (tab === 'created') {
+      document.title = `Profil de ${data.user.username} - Note Ton Tacos`;
+      usernameHeader.innerText = data.user.username;
+      document.getElementById('profile-date').innerText = new Date(data.user.created_at).toLocaleDateString();
+      
+      document.getElementById('stat-recipes').innerText = data.stats.recipe_count;
+      document.getElementById('stat-ratings').innerText = data.stats.rating_count;
+      document.getElementById('stat-avg').innerHTML = `${data.stats.avg_received || '0.0'} <span style="font-size: 1.5rem;">★</span>`;
+      recipesList = data.recipes;
+    } else {
+      recipesList = data;
+    }
+    
+    const grid = document.getElementById('tacos-grid');
+    if(recipesList.length === 0) {
+      grid.innerHTML = `<div class="empty-state"><h3>Rien ici</h3><p>Il n'y a pas encore de Tacos dans cette liste.</p></div>`;
+      return;
+    }
+    
+    grid.innerHTML = recipesList.map(r => `
+      <div class="taco-card" onclick="window.location.href='recipe.html?id=${r.id}'">
+        <div class="taco-card-header">
+          <div>
+            <h3 class="taco-title">${r.name}</h3>
+            <span class="taco-author">par ${r.author_name} le ${new Date(r.created_at).toLocaleDateString()}</span>
+          </div>
+          <div class="taco-rating">${renderStars(r.avg_rating)} (${r.rating_count})</div>
+        </div>
+        <div class="taco-tags">
+          <span class="tag tag-size">${r.size}</span>
+          ${r.meats && r.meats.length > 0 ? r.meats.slice(0, 2).map(m => `<span class="tag tag-meat">${m}</span>`).join('') : ''}
+          ${r.sauces && r.sauces.length > 0 ? r.sauces.slice(0, 2).map(s => `<span class="tag tag-sauce">${s}</span>`).join('') : ''}
+          ${r.supplements && r.supplements.length > 0 ? r.supplements.slice(0, 2).map(sup => `<span class="tag tag-sup">${sup}</span>`).join('') : ''}
+          ${(r.meats && r.meats.length > 2) || (r.sauces && r.sauces.length > 2) || (r.supplements && r.supplements.length > 2) ? '<span class="tag">+</span>' : ''}
+        </div>
+        <p class="taco-desc">${r.description ? r.description.substring(0, 80) + '...' : 'Pas de description'}</p>
+        <div style="margin-top: auto; display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.85rem;">
+          <span>💬 ${r.comment_count}</span>
+          <span>🧀 ${r.gratinnage || 'Sans gratinnage'}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    if (tab === 'created') {
+      document.getElementById('profile-header').innerHTML = '<div class="empty-state">Profil introuvable</div>';
+    }
+    document.getElementById('tacos-grid').innerHTML = '';
+  }
+}
+
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
   const tc = document.createElement('div');
@@ -403,7 +566,20 @@ document.addEventListener('DOMContentLoaded', () => {
   setupLogin();
   initUser();
   
-  loadFeed();
-  setupCreateForm();
-  loadRecipe();
+  if(window.location.pathname.includes('profile.html')) {
+    document.getElementById('tab-created')?.addEventListener('click', () => loadProfile('created'));
+    document.getElementById('tab-favorite')?.addEventListener('click', () => loadProfile('favorite'));
+    document.getElementById('tab-todo')?.addEventListener('click', () => loadProfile('todo'));
+
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get('id') && currentUser) {
+      window.location.replace(`profile.html?id=${currentUser.id}`);
+    } else {
+      loadProfile('created');
+    }
+  } else {
+    loadFeed();
+    setupCreateForm();
+    loadRecipe();
+  }
 });

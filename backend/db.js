@@ -12,6 +12,7 @@ const dbPromise = open({
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username VARCHAR(50) UNIQUE NOT NULL,
+      password_hash VARCHAR(255),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -48,10 +49,27 @@ const dbPromise = open({
       content TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS bookmarks (
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+      type VARCHAR(20) NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, recipe_id, type)
+    );
   `);
 
-  await db.run('INSERT OR IGNORE INTO users (username) VALUES (?)', ['ChefTacos']);
-  await db.run('INSERT OR IGNORE INTO users (username) VALUES (?)', ['Gourmand87']);
+  try {
+    await db.get('SELECT password_hash FROM users LIMIT 1');
+  } catch (e) {
+    if (e.message.includes('no such column')) {
+      console.log('Migrating database: adding password_hash column');
+      await db.exec('ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)');
+    }
+  }
+
+  await db.run('INSERT OR IGNORE INTO users (username, password_hash) VALUES (?, ?)', ['ChefTacos', '$2a$10$wIX.bT9HhGz7N/rNxtt06.J4O7v7.2zW8L..BZbJq4XjJ.Yt/O26m']);
+  await db.run('INSERT OR IGNORE INTO users (username, password_hash) VALUES (?, ?)', ['Gourmand87', '$2a$10$wIX.bT9HhGz7N/rNxtt06.J4O7v7.2zW8L..BZbJq4XjJ.Yt/O26m']);
 
   return db;
 });
