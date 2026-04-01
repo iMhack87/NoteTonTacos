@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Créer un Tacos - Note Ton Tacos</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  
+  <header>
+    <div class="container header-content">
+      <a href="index.html" class="logo">
+        <span>🌮</span> Note Ton Tacos
+      </a>
+      <div id="user-ui"></div>
+    </div>
+  </header>
+
+  <main class="main-content container">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <h1 class="text-gradient" style="font-size: 2.5rem; margin-bottom: 2rem;">Composez Votre Chef-d'œuvre</h1>
+      
+      <div class="glass-panel">
+        <form id="create-form">
+          <div class="form-group">
+            <label class="form-label">Nom de votre création</label>
+            <input type="text" id="taco-name" class="form-control" placeholder="Le Tacos Giga-Cheese" required>
+          </div>
+          
+          <div class="form-group" style="margin-top: 2rem;">
+            <label class="form-label">Taille</label>
+            <div class="checkbox-grid">
+              <div class="checkbox-item">
+                <input type="radio" name="size" id="s-simple" value="Simple" checked>
+                <label for="s-simple">1 Viande (Simple)</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="radio" name="size" id="s-double" value="Double">
+                <label for="s-double">2 Viandes (Double)</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="radio" name="size" id="s-maxi" value="Maxi">
+                <label for="s-maxi">3 Viandes (Maxi)</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="radio" name="size" id="s-giga" value="Giga">
+                <label for="s-giga">4+ Viandes (Giga)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 2rem;">
+            <label class="form-label">Ingrédients & Viandes</label>
+            <div class="checkbox-grid">
+              <div class="checkbox-item">
+                <input type="checkbox" name="ingredients" id="i-poulet" value="Poulet Mariné">
+                <label for="i-poulet">Poulet Mariné</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" name="ingredients" id="i-hache" value="Viande Hachée">
+                <label for="i-hache">Viande Hachée</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" name="ingredients" id="i-cordon" value="Cordon Bleu">
+                <label for="i-cordon">Cordon Bleu</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" name="ingredients" id="i-tenders" value="Tenders">
+                <label for="i-tenders">Tenders</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" name="ingredients" id="i-merguez" value="Merguez">
+                <label for="i-merguez">Merguez</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" name="ingredients" id="i-falafel" value="Falafel">
+                <label for="i-falafel">Falafel</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" name="ingredients" id="i-alg" value="Sauce Algérienne">
+                <label for="i-alg">Sauce Algérienne</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" name="ingredients" id="i-sam" value="Sauce Samouraï">
+                <label for="i-sam">Sauce Samouraï</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 2rem;">
+            <label class="form-label">Gratinnage (Optionnel)</label>
+            <div class="checkbox-grid">
+              <div class="checkbox-item">
+                <input type="radio" name="gratinnage" id="g-none" value="" checked>
+                <label for="g-none">Aucun</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="radio" name="gratinnage" id="g-raclette" value="Raclette">
+                <label for="g-raclette">Raclette</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="radio" name="gratinnage" id="g-chevre" value="Chèvre">
+                <label for="g-chevre">Chèvre Miel</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="radio" name="gratinnage" id="g-mozza" value="Mozzarella">
+                <label for="g-mozza">Mozzarella</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 2rem;">
+            <label class="form-label">Description / Secret du Chef</label>
+            <textarea id="description" class="form-control" rows="4" placeholder="Ce Tacos est l'équilibre parfait entre le fondant du cordon bleu et la chaleur de la sauce algérienne..."></textarea>
+          </div>
+          
+          <div style="margin-top: 3rem; text-align: right;">
+            <a href="index.html" class="btn btn-secondary" style="margin-right: 1rem;">Annuler</a>
+            <button type="submit" class="btn btn-primary" style="font-size: 1.2rem; padding: 1rem 3rem;">Publier la Recette</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Login Modal -->
+  <div class="overlay" id="login-modal">
+    <div class="modal">
+      <h2 style="margin-bottom: 1rem;">Connexion Requise</h2>
+      <p style="margin-bottom: 2rem; color: var(--text-secondary);">Veuillez choisir un pseudo pour publier votre recette.</p>
+      <form id="login-form">
+        <div class="form-group">
+          <input type="text" id="pseudo" class="form-control" placeholder="Ex: MaitreTacos" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Se connecter</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

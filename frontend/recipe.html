@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Détails Tacos - Note Ton Tacos</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  
+  <header>
+    <div class="container header-content">
+      <a href="index.html" class="logo">
+        <span>🌮</span> Note Ton Tacos
+      </a>
+      <div id="user-ui"></div>
+    </div>
+  </header>
+
+  <main class="main-content container">
+    <div id="recipe-container" style="max-width: 900px; margin: 0 auto;">
+      
+      <!-- Generated via JS -->
+      <div id="recipe-hero" class="recipe-hero">Chargement des données...</div>
+      <div id="recipe-details" class="recipe-details-grid"></div>
+      
+      <!-- Ratings & Comments Area -->
+      <div class="glass-panel" style="margin-top: 3rem;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 3rem;">
+          
+          <!-- Rating Form -->
+          <div>
+            <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Notez cette recette !</h3>
+            <form id="rating-form" style="display: flex; flex-direction: column; align-items: flex-start;">
+              <div class="stars">
+                <input type="radio" id="star5" name="rating" value="5" /><label for="star5">★</label>
+                <input type="radio" id="star4" name="rating" value="4" /><label for="star4">★</label>
+                <input type="radio" id="star3" name="rating" value="3" /><label for="star3">★</label>
+                <input type="radio" id="star2" name="rating" value="2" /><label for="star2">★</label>
+                <input type="radio" id="star1" name="rating" value="1" /><label for="star1">★</label>
+              </div>
+              <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Valider ma note</button>
+            </form>
+          </div>
+          
+          <!-- Comments -->
+          <div style="border-top: 1px solid var(--border-color); padding-top: 2rem;">
+            <h3 style="margin-bottom: 1.5rem;">Commentaires</h3>
+            
+            <form id="comment-form" style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 1rem;">
+              <textarea id="comment-content" class="form-control" rows="3" placeholder="Qu'avez-vous pensé de ce Tacos ? Laissez votre avis !"></textarea>
+              <button type="submit" class="btn btn-secondary" style="align-self: flex-end;">Publier le commentaire</button>
+            </form>
+            
+            <div id="comments-list">
+              <!-- JS Injected -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+  </main>
+
+  <!-- Login Modal -->
+  <div class="overlay" id="login-modal">
+    <div class="modal">
+      <h2 style="margin-bottom: 1rem;">Connexion Requise</h2>
+      <p style="margin-bottom: 2rem; color: var(--text-secondary);">Veuillez choisir un pseudo pour noter ou commenter.</p>
+      <form id="login-form">
+        <div class="form-group">
+          <input type="text" id="pseudo" class="form-control" placeholder="Ex: MaitreTacos" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Se connecter</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
