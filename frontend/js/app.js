@@ -122,7 +122,8 @@ async function loadFeed() {
           <span class="tag tag-size">${r.size}</span>
           ${r.meats && r.meats.length > 0 ? r.meats.slice(0, 2).map(m => `<span class="tag tag-meat">${m}</span>`).join('') : ''}
           ${r.sauces && r.sauces.length > 0 ? r.sauces.slice(0, 2).map(s => `<span class="tag tag-sauce">${s}</span>`).join('') : ''}
-          ${(r.meats && r.meats.length > 2) || (r.sauces && r.sauces.length > 2) ? '<span class="tag">+</span>' : ''}
+          ${r.supplements && r.supplements.length > 0 ? r.supplements.slice(0, 2).map(sup => `<span class="tag tag-sup">${sup}</span>`).join('') : ''}
+          ${(r.meats && r.meats.length > 2) || (r.sauces && r.sauces.length > 2) || (r.supplements && r.supplements.length > 2) ? '<span class="tag">+</span>' : ''}
         </div>
         <p class="taco-desc">${r.description ? r.description.substring(0, 80) + '...' : 'Pas de description'}</p>
         <div style="margin-top: auto; display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.85rem;">
@@ -140,6 +141,41 @@ async function loadFeed() {
 function setupCreateForm() {
   const form = document.getElementById('create-form');
   if(!form) return;
+
+  function getMaxMeats() {
+    const size = document.querySelector('input[name="size"]:checked')?.value;
+    if(size === 'Simple') return 1;
+    if(size === 'Double') return 2;
+    if(size === 'Maxi') return 3;
+    return 10; // Giga or other
+  }
+
+  // Meats Selection Logic
+  document.getElementById('meats-grid').addEventListener('change', (e) => {
+    if(e.target.name === 'meats' && e.target.checked) {
+      const max = getMaxMeats();
+      const checked = document.querySelectorAll('input[name="meats"]:checked');
+      if(checked.length > max) {
+        e.target.checked = false;
+        showToast(`Taille choisie : ${max} viande(s) maximum.`, 'error');
+      }
+    }
+  });
+
+  // Size Change Logic
+  document.querySelectorAll('input[name="size"]').forEach(i => {
+    i.addEventListener('change', () => {
+      const max = getMaxMeats();
+      const checked = Array.from(document.querySelectorAll('input[name="meats"]:checked'));
+      if(checked.length > max) {
+        // Uncheck the excess ones (the ones checked last or visually last)
+        for(let j = max; j < checked.length; j++) {
+          checked[j].checked = false;
+        }
+        showToast(`Vos viandes en trop ont été retirées (limite: ${max}).`, 'error');
+      }
+    });
+  });
 
   // Custom Meats Logic
   const addMeatBtn = document.getElementById('btn-add-meat');
@@ -172,6 +208,22 @@ function setupCreateForm() {
       input.value = '';
     });
   }
+
+  // Custom Supplements Logic
+  const addSupBtn = document.getElementById('btn-add-sup');
+  if(addSupBtn) {
+    addSupBtn.addEventListener('click', () => {
+      const input = document.getElementById('custom-sup-input');
+      const val = input.value.trim();
+      if(!val) return;
+      const id = 'csup-' + Date.now();
+      const div = document.createElement('div');
+      div.className = 'checkbox-item';
+      div.innerHTML = `<input type="checkbox" name="supplements" id="${id}" value="${val}" checked><label for="${id}">${val}</label>`;
+      document.getElementById('supplements-grid').appendChild(div);
+      input.value = '';
+    });
+  }
   
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -184,6 +236,7 @@ function setupCreateForm() {
     
     const meats = Array.from(document.querySelectorAll('input[name="meats"]:checked')).map(i => i.value);
     const sauces = Array.from(document.querySelectorAll('input[name="sauces"]:checked')).map(i => i.value);
+    const supplements = Array.from(document.querySelectorAll('input[name="supplements"]:checked')).map(i => i.value);
     
     const payload = {
       name,
@@ -192,7 +245,8 @@ function setupCreateForm() {
       gratinnage,
       description,
       meats,
-      sauces
+      sauces,
+      supplements
     };
     
     try {
@@ -246,6 +300,10 @@ async function loadRecipe() {
         <p style="margin-top: 1rem;"><strong>Sauces :</strong></p>
         <div class="taco-tags" style="margin-top: 0.5rem;">
           ${recipe.sauces && recipe.sauces.length > 0 ? recipe.sauces.map(s => `<span class="tag tag-sauce">${s}</span>`).join('') : '<span class="text-muted">Aucune</span>'}
+        </div>
+        <p style="margin-top: 1rem;"><strong>Suppléments :</strong></p>
+        <div class="taco-tags" style="margin-top: 0.5rem;">
+          ${recipe.supplements && recipe.supplements.length > 0 ? recipe.supplements.map(sup => `<span class="tag tag-sup">${sup}</span>`).join('') : '<span class="text-muted">Aucun</span>'}
         </div>
         <p style="margin-top: 1rem;"><strong>Gratinnage :</strong> ${recipe.gratinnage || 'Aucun'}</p>
       </div>

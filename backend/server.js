@@ -62,7 +62,8 @@ app.get('/api/recipes', async (req, res) => {
       (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) as rating_count,
       (SELECT COUNT(*) FROM comments WHERE recipe_id = r.id) as comment_count,
       (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='meat') as meats,
-      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='supplement') as supplements
       FROM recipes r
       JOIN users u ON r.author_id = u.id
       ORDER BY r.created_at DESC;
@@ -71,6 +72,7 @@ app.get('/api/recipes', async (req, res) => {
     rows.forEach(r => {
       r.meats = parseCSV(r.meats);
       r.sauces = parseCSV(r.sauces);
+      r.supplements = parseCSV(r.supplements);
     });
     res.json(rows);
   } catch (err) {
@@ -88,7 +90,8 @@ app.get('/api/recipes/:id', async (req, res) => {
       (SELECT COALESCE(AVG(score), 0) FROM ratings WHERE recipe_id = r.id) as avg_rating,
       (SELECT COUNT(*) FROM ratings WHERE recipe_id = r.id) as rating_count,
       (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='meat') as meats,
-      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='sauce') as sauces,
+      (SELECT GROUP_CONCAT(ingredient_name, ',') FROM recipe_ingredients WHERE recipe_id = r.id AND type='supplement') as supplements
       FROM recipes r
       JOIN users u ON r.author_id = u.id
       WHERE r.id = ?;
@@ -98,6 +101,7 @@ app.get('/api/recipes/:id', async (req, res) => {
     
     row.meats = parseCSV(row.meats);
     row.sauces = parseCSV(row.sauces);
+    row.supplements = parseCSV(row.supplements);
     res.json(row);
   } catch (err) {
     console.error(err);
@@ -106,7 +110,7 @@ app.get('/api/recipes/:id', async (req, res) => {
 });
 
 app.post('/api/recipes', async (req, res) => {
-  let { name, author_id, size, gratinnage, description, meats, sauces } = req.body;
+  let { name, author_id, size, gratinnage, description, meats, sauces, supplements } = req.body;
   
   name = cleanText(name, 60);
   size = cleanText(size, 30);
@@ -117,6 +121,14 @@ app.post('/api/recipes', async (req, res) => {
   
   const safeMeats = Array.isArray(meats) ? meats.map(m => cleanText(m, 40)).filter(m => m) : [];
   const safeSauces = Array.isArray(sauces) ? sauces.map(s => cleanText(s, 40)).filter(s => s) : [];
+  const safeSupplements = Array.isArray(supplements) ? supplements.map(s => cleanText(s, 40)).filter(s => s) : [];
+  
+  // Strict meat count limits per size
+  const limitMap = { 'Simple': 1, 'Double': 2, 'Maxi': 3, 'Giga': 10 };
+  const maxMeats = limitMap[size] || 10;
+  if (safeMeats.length > maxMeats) {
+    return res.status(400).json({ error: `Too many meats for size ${size}. Limit is ${maxMeats}.` });
+  }
   
   try {
     const db = await dbPromise;
@@ -137,6 +149,11 @@ app.post('/api/recipes', async (req, res) => {
     if (safeSauces && safeSauces.length > 0) {
       for (const s of safeSauces) {
         await db.run('INSERT INTO recipe_ingredients (recipe_id, type, ingredient_name) VALUES (?, ?, ?)', [recipeId, 'sauce', s]);
+      }
+    }
+    if (safeSupplements && safeSupplements.length > 0) {
+      for (const s of safeSupplements) {
+        await db.run('INSERT INTO recipe_ingredients (recipe_id, type, ingredient_name) VALUES (?, ?, ?)', [recipeId, 'supplement', s]);
       }
     }
     
