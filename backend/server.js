@@ -342,11 +342,13 @@ app.post('/api/recipes/:id/rating', async (req, res) => {
   
   try {
     const db = await dbPromise;
+    const existing = await db.get('SELECT * FROM ratings WHERE recipe_id = ? AND user_id = ?', [id, user_id]);
+    if (existing) {
+      return res.status(400).json({ error: 'Vous avez déjà noté cette recette' });
+    }
     const query = `
       INSERT INTO ratings (recipe_id, user_id, score) 
       VALUES (?, ?, ?)
-      ON CONFLICT (recipe_id, user_id) 
-      DO UPDATE SET score = excluded.score, created_at = CURRENT_TIMESTAMP;
     `;
     await db.run(query, [id, user_id, score]);
     
@@ -385,6 +387,10 @@ app.post('/api/recipes/:id/comments', async (req, res) => {
   
   try {
     const db = await dbPromise;
+    const existing = await db.get('SELECT * FROM comments WHERE recipe_id = ? AND user_id = ?', [id, user_id]);
+    if (existing) {
+      return res.status(400).json({ error: 'Vous avez déjà commenté cette recette' });
+    }
     const query = 'INSERT INTO comments (recipe_id, user_id, content) VALUES (?, ?, ?)';
     const result = await db.run(query, [id, user_id, content]);
     
