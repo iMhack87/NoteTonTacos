@@ -1,6 +1,6 @@
 // Global State
 let currentUser = null;
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 
 // Utility: Show Toast Notification
 function showToast(message, type = 'default') {
