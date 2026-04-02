@@ -392,3 +392,160 @@ header {
   padding: 3rem;
   color: var(--text-muted);
 }
+
+/* ─── Mobile ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+
+  /* Header */
+  header { padding: 0.75rem 0; }
+
+  .header-content {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .logo {
+    font-size: 1.1rem;
+    flex: 1;
+  }
+
+  /* Right-side nav (créer + user) */
+  .header-content > div {
+    gap: 0.5rem !important;
+    flex-wrap: wrap;
+  }
+
+  .header-content .btn {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* User avatar + name — truncate long usernames */
+  .user-info a.btn {
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Main content */
+  .main-content { padding: 1.5rem 0; }
+
+  /* Hero title on index.html */
+  .main-content h1 { font-size: 1.8rem !important; }
+
+  /* Recipe page hero */
+  .recipe-hero h1 { font-size: 1.8rem !important; }
+
+  /* Glass panels */
+  .glass-panel { padding: 1.25rem; }
+
+  /* Tacos grid — single column */
+  .tacos-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .taco-card { padding: 1.1rem; }
+
+  /* Card header — let rating drop below title */
+  .taco-card-header {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .taco-rating { font-size: 0.9rem; }
+
+  /* Forms */
+  .form-group { margin-bottom: 1rem; }
+
+  .checkbox-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .checkbox-item label {
+    padding: 0.55rem 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  /* Custom-add row (create form) */
+  .custom-add {
+    flex-direction: column !important;
+  }
+
+  .custom-add .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Stars rating */
+  .stars { gap: 0.3rem; }
+  .stars label { font-size: 2rem; }
+
+  /* Modal */
+  .modal {
+    width: 95%;
+    padding: 1.5rem 1.25rem;
+  }
+
+  /* Toast — full-width at bottom */
+  #toast-container {
+    bottom: 1rem;
+    right: 0.75rem;
+    left: 0.75rem;
+  }
+
+  .toast { padding: 0.75rem 1rem; }
+
+  /* Recipe details grid (already in CSS but ensure) */
+  .recipe-details-grid { grid-template-columns: 1fr; }
+
+  /* Bookmark / author action buttons on recipe page */
+  .recipe-hero > div[style*="flex"] {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.6rem !important;
+  }
+
+  /* Pagination controls */
+  #feed-pagination {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    text-align: center;
+  }
+
+  /* Feed controls search bar */
+  #feed-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  #feed-controls input,
+  #feed-controls select {
+    max-width: 100% !important;
+  }
+
+  #feed-controls .btn { width: 100%; }
+
+  /* Comment box */
+  .comment-box { padding: 1rem; }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+  .logo { font-size: 0.95rem; }
+  .logo span { display: none; } /* hide emoji to save space */
+
+  .glass-panel { padding: 1rem; }
+
+  .taco-card { padding: 0.9rem; }
+
+  .main-content h1 { font-size: 1.5rem !important; }
+  .recipe-hero h1 { font-size: 1.5rem !important; }
+
+  .stars label { font-size: 1.75rem; }
+
+  .checkbox-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); }
+}

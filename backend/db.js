@@ -68,6 +68,14 @@ const dbPromise = open({
     }
   }
 
+  await db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id);
+    CREATE INDEX IF NOT EXISTS idx_ratings_recipe_id ON ratings(recipe_id);
+    CREATE INDEX IF NOT EXISTS idx_comments_recipe_id ON comments(recipe_id);
+    CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks(user_id);
+    CREATE INDEX IF NOT EXISTS idx_recipes_author_id ON recipes(author_id);
+  `);
+
   await db.run('INSERT OR IGNORE INTO users (username, password_hash) VALUES (?, ?)', ['ChefTacos', '$2a$10$wIX.bT9HhGz7N/rNxtt06.J4O7v7.2zW8L..BZbJq4XjJ.Yt/O26m']);
   await db.run('INSERT OR IGNORE INTO users (username, password_hash) VALUES (?, ?)', ['Gourmand87', '$2a$10$wIX.bT9HhGz7N/rNxtt06.J4O7v7.2zW8L..BZbJq4XjJ.Yt/O26m']);
 
