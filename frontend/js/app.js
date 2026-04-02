@@ -424,11 +424,16 @@ function setupInteractions(id) {
       if(!score) return;
       
       try {
-        await fetch(`${API_URL}/recipes/${id}/rating`, {
+        const res = await fetch(`${API_URL}/recipes/${id}/rating`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: currentUser.id, score: parseInt(score) })
         });
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || 'Erreur', 'error');
+          return;
+        }
         showToast('Note enregistrée !', 'success');
         setTimeout(() => location.reload(), 1000);
       } catch(e) {}
@@ -448,11 +453,16 @@ function setupInteractions(id) {
       if(!content) return;
       
       try {
-        await fetch(`${API_URL}/recipes/${id}/comments`, {
+        const res = await fetch(`${API_URL}/recipes/${id}/comments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: currentUser.id, content })
         });
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || 'Erreur', 'error');
+          return;
+        }
         document.getElementById('comment-content').value = '';
         loadComments(id);
         showToast('Commentaire ajouté', 'success');
