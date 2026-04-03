@@ -668,6 +668,16 @@ async function loadProfile(tab = 'created') {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Permet de masquer le clavier sur mobile lors d'un tap en dehors d'un champ
+  document.addEventListener('touchstart', (e) => {
+    const active = document.activeElement;
+    if (active && ['INPUT', 'TEXTAREA'].includes(active.tagName)) {
+      if (!e.target.closest('input, textarea, button, label, select')) {
+        active.blur();
+      }
+    }
+  }, { passive: true });
+
   const tc = document.createElement('div');
   tc.id = 'toast-container';
   document.body.appendChild(tc);
